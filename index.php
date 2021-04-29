@@ -104,7 +104,24 @@ div {
       }
       document.getElementById("model").innerHTML = str;
     }
-    
+    //* 
+	function change() {
+      var x =document.getElementById("marka").value;
+     var str=" <option >--изберете--</option>";
+     
+      if(x!="--изберете--"){
+      for (i = 0; i < eval('ar'+x).length; i++) {
+        
+             str+=" <option value='"+eval('ar'+x)[i]+"' >";
+             i++;
+             str+=eval('ar'+x)[i]+"</option>";
+           }
+           
+      }
+      document.getElementById("model").innerHTML = str;
+    }
+	
+    *//
     
         </script>
 

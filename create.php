@@ -26,7 +26,6 @@ if(!$dbConn=mysqli_connect($host, $dbUser, $dbPass)) {
  (
    id_kola   INTEGER AUTO_INCREMENT NOT NULL ,
    id_model  INTEGER NOT NULL ,
-   id_ekstri INTEGER ,
    snimka    VARCHAR (60),
    PRIMARY KEY (id_kola)
  )  ENGINE=INNODB DEFAULT CHARSET=utf8;

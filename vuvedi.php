@@ -32,7 +32,9 @@ div {
 }
     </style>
     <body>
-    
+    <form action="index.php">
+    <input type="submit" style="width:15%" value="Търси автомобил" />
+    </form>
         
         <center>
             <h1>Въведи автомобил</h1>
@@ -69,24 +71,20 @@ div {
 <?php
 include "config.php";
 if (isset($_POST["submit"])){
- if (isset($_POST["marka"])&&isset($_POST["model"])&&isset($_POST["ekstri"])&&isset($_FILES["snimka"]["name"])){
+ if (isset($_POST["marka"])&&isset($_POST["model"])){
    $marka=$_POST['marka'];
    $model=$_POST['model'];
-   $ekstri=$_POST['ekstri'];
-   $snimka=$_FILES["snimka"]["name"];
-      echo $marka,$model,$ekstri[0],$snimka;
-   $ekst=" ";
-   for ($x = 0; $x < sizeof($ekstri); $x++){
-     $u=$ekstri[$x];
-          
-         
-      
-       }
+   if(isset($_POST["ekstri"])){
+   $ekstri=$_POST['ekstri'];}
+   if(isset($_FILES["snimka"]["name"])){
+   $snimka=$_FILES["snimka"]["name"];}
+     
+   
 
           
    $sql="Insert into koli(id_model,snimka)
    Values (".$model.",".'"'.$snimka.'"'.");";
-    echo $sql;
+    
    $call = $dbConn->prepare($sql);
   
 
@@ -96,16 +94,30 @@ if (isset($_POST["submit"])){
 
 
 
-
+       if(isset($_FILES["snimka"]["name"])){
        $target_dir = "uploads/";
        $target_file = $target_dir . basename($_FILES["snimka"]["name"]);
 
 
        if (move_uploaded_file($_FILES["snimka"]["tmp_name"], $target_file)) {
-        echo "The file ". htmlspecialchars( basename( $_FILES["snimka"]["name"])). " has been uploaded.";
-      } else {
-        echo "Sorry, there was an error uploading your file.";
+        
+      } 
+    }
+      if(isset($_POST["ekstri"])){
+      $call2  = $dbConn->prepare("SELECT LAST_INSERT_ID();");
+      $call2->execute();
+      mysqli_stmt_store_result($call2);
+      mysqli_stmt_bind_result($call2, $id);
+      mysqli_stmt_fetch($call2);
+
+      $call3  = $dbConn->prepare("Insert into koli_ekstri(id_kola,id_ekstra) Values (?,?);");
+      foreach ($ekstri as $value) {
+        $call3->bind_param("ii",$id,$value);
+        $call3->execute();
       }
+                  
+      }
+
  }
 
 
@@ -135,15 +147,16 @@ if (isset($_POST["submit"])){
     mysqli_stmt_bind_result($call, $model,$id_model,$id_marka);
     echo'<script> ';
     $i=0;
+    $id=0;
     while(mysqli_stmt_fetch($call)){
       
-        $id=0;
+        
         if($id_marka!=$id){
     echo 'var ar'.$id_marka.'=[];'; $id=$id_marka;}
     
      echo 'ar'.$id_marka.'.push('.$id_model.');';
      $i++;
-     echo 'ar'.$id_marka.'.push('.$model.');'; }
+     echo 'ar'.$id_marka.'.push("'.$model.'");'; }
      $i++;
    }
     

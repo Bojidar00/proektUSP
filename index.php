@@ -66,45 +66,121 @@ div {
     <input type="submit" name="submit" value="Търси">
 </form>
 </div>
-</center>
+
                    <?php 
                      include "config.php";
                      if (isset($_POST["submit"])){
-                      if (isset($_POST["marka"])&&isset($_POST["model"])&&isset($_POST["ekstri"])){
+                      
                         $marka=$_POST['marka'];
                         $model=$_POST['model'];
-                        $ekstri=$_POST['ekstri'];
-                           echo $marka,$model,$ekstri[0];
+                        
+                        if($marka=="--изберете--"){$marka='';}
+                        if($model=="--изберете--"){$model='';}
+                           
                         $ekst=" ";
+
+                        if(!empty($_POST['ekstri'])){
+                          $ekstri=$_POST['ekstri'];
+                          $count=0;
                         for ($x = 0; $x < sizeof($ekstri); $x++){
                           $u=$ekstri[$x];
-                               
-                              $ekst=$ekst." AND koli_ekstri.id_ekstra=".$u;
-                           
+                               if($x==0){
+                              $ekst=$ekst." ".$u;}
+                              else{$ekst=$ekst." ,".$u;}
+                              $count=$count+1;
                             }
+                          }
 
-                               
-                        $sql="Select koli.id_kola,snimka,marka,model from koli 
-                        join model on model.id_model=koli.id_model
-                        join marka on marka.id_marka=model.id_marka 
-                        join koli_ekstri on koli_ekstri.id_kola=koli.id_kola
-                        where marka=".$marka." AND model=".$model."".$ekst.";";
+                            
+                            if ( !empty($marka)&&!empty($model)&&!empty($ekstri)) {
+                              $sql="Select koli.id_kola,snimka,marka,model from koli 
+                              join model on model.id_model=koli.id_model
+                              join marka on marka.id_marka=model.id_marka 
+                              join koli_ekstri on koli_ekstri.id_kola=koli.id_kola
+                              join ekstri on ekstri.id_ekstra=koli_ekstri.id_ekstra
+                              where marka.id_marka=".$marka." AND model.id_model=".$model."AND koli_ekstri.id_ekstra in(".$ekst.") GROUP BY koli.id_kola HAVING COUNT(DISTINCT koli_ekstri.id_ekstra) =".$count.";";
+
+                            }
+                            else if ( empty($marka)&&empty($model)&&empty($ekstri)) {
+                              $sql="Select id_kola,snimka,model,marka from koli join model on model.id_model=koli.id_model join marka on marka.id_marka=model.id_marka;";
+
+                            }
+                            else if ( !empty($marka)&&!empty($model)) {
+                              $sql="Select id_kola,snimka,model,marka from koli join model on model.id_model=koli.id_model join marka on marka.id_marka=model.id_marka where marka.id_marka=".$marka." AND model.id_model=".$model.";";
+
+                            }
+                            else if ( !empty($marka)&&!empty($ekstri)) {
+                              $sql="Select koli.id_kola,snimka,model,marka from koli join model on model.id_model=koli.id_model join marka on marka.id_marka=model.id_marka join koli_ekstri on koli_ekstri.id_kola=koli.id_kola where marka.id_marka=".$marka." AND koli_ekstri.id_ekstra in(".$ekst.")  GROUP BY koli.id_kola HAVING COUNT(DISTINCT koli_ekstri.id_ekstra) =".$count.";";
+
+                            }
+                            else if ( !empty($marka)) {
+                              $sql="Select koli.id_kola,snimka,model,marka from koli join model on model.id_model=koli.id_model join marka on marka.id_marka=model.id_marka where marka.id_marka=".$marka.";";
+
+                            }
+                            else if ( !empty($ekstri)) {
+                              $sql="Select koli.id_kola,snimka,model,marka from koli join model on model.id_model=koli.id_model join marka on marka.id_marka=model.id_marka join koli_ekstri on koli_ekstri.id_kola=koli.id_kola where koli_ekstri.id_ekstra in(".$ekst.")  GROUP BY koli.id_kola HAVING COUNT(DISTINCT koli_ekstri.id_ekstra) =".$count.";";
+
+                            }
+                        
+
+                        
                          
-                        echo $sql;
-                        $call = $dbConn->prepare($sql);
-                        //$call->bind_param("ii",$marka,$model);
+                       
+                        $call2 = $dbConn->prepare($sql);
+                        
 
-                        if (!$call->execute()){echo "Грешка.";}
-                            else {echo "Добавихте един запис.";}
+                        if (!$call2->execute()){echo "Грешка.";}
+                            else {
+                              
+                              mysqli_stmt_store_result($call2);
+                              mysqli_stmt_bind_result($call2,$id,$snimka,$model,$marka);
+                              
+                              echo '<table border="5">
+                              <thead>
+                                <tr>
+                                <th>Снимка</th>
+                                    <th>Марка</th>
+                                       <th>Модел</th>
+                                       <th>Екстри</th>
+                                              </tr>
+                                                    </thead>
+                                          <tbody>';
+                                          while(mysqli_stmt_fetch($call2)){
+                                            echo '<tr>
+                                            <td id="'.$id.'snimka"><img src="uploads/'.$snimka.'"width="300" 
+                                            height="200" ></td>
+                                            <td id="'.$id.'marka">'.$marka.'</td>
+                                            <td id="'.$id.'model">'.$model.'</td>';
+                                          $dbConn->next_result();
+                                                $call4  = $dbConn->prepare("SELECT ekstra from ekstri join koli_ekstri on koli_ekstri.id_ekstra=ekstri.id_ekstra where koli_ekstri.id_kola=?");
+                                                $call4->bind_param("i", $id);
+                                                
+                                                if (! $call4->execute()){echo "Грешка.";}
+                                                else {
+                                                 
+                                                   mysqli_stmt_store_result($call4);
+                                                   mysqli_stmt_bind_result($call4, $ekstra);
+                                                   echo '<td id="'.$id.'ekstra">';
+                                                   while(mysqli_stmt_fetch($call4)){
+                                                    echo $ekstra.', '; }
+                                                  
+                                                }
+                                                    echo'</td></tr>';
+                                        }
+                                        echo ' </tbody>
+                                        </table>';
+                            }
                     
 
 
-                      }
+                      
+                     
 
 
 
                      }
                      ?>
+                     </center>
 
 <?php
  $call  = $dbConn->prepare("SELECT model,id_model,id_marka from model Order by id_marka;");
@@ -117,15 +193,16 @@ div {
     mysqli_stmt_bind_result($call, $model,$id_model,$id_marka);
     echo'<script> ';
     $i=0;
+    $id=0;
     while(mysqli_stmt_fetch($call)){
       
-        $id=0;
+        
         if($id_marka!=$id){
     echo 'var ar'.$id_marka.'=[];'; $id=$id_marka;}
     
      echo 'ar'.$id_marka.'.push('.$id_model.');';
      $i++;
-     echo 'ar'.$id_marka.'.push('.$model.');'; }
+     echo 'ar'.$id_marka.'.push("'.$model.'");'; }
      $i++;
    }
     
